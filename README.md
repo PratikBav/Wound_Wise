@@ -311,4 +311,3 @@ For support, open an issue in the [GitHub repository](https://github.com/PratikB
 
 ---
 
-**Made with ❤️ using Flutter and Gemini AI**
