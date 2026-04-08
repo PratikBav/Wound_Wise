@@ -20,7 +20,7 @@ class ImageService {
       return null; // User cancelled
     } catch (e) {
       // Error occurred (permission denied, camera unavailable, etc.)
-      return null;
+      throw Exception(e.toString());
     }
   }
 
@@ -39,7 +39,7 @@ class ImageService {
       return null; // User cancelled
     } catch (e) {
       // Error occurred (permission denied, etc.)
-      return null;
+      throw Exception(e.toString());
     }
   }
 }

@@ -1,16 +1,20 @@
 import 'dart:io';
+import 'dart:ui';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import '../theme/app_colors.dart';
 import '../services/gemini_service.dart';
 import '../models/chat_message.dart';
+import '../services/pdf_service.dart';
 import 'home_screen.dart';
 
 /// Analysis screen with AI chatbot
 class AnalysisScreen extends StatefulWidget {
   final File imageFile;
+  final Uint8List? segmentationMask;
 
-  const AnalysisScreen({super.key, required this.imageFile});
+  const AnalysisScreen({super.key, required this.imageFile, this.segmentationMask});
 
   @override
   State<AnalysisScreen> createState() => _AnalysisScreenState();
@@ -23,6 +27,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   final List<ChatMessage> _messages = [];
   bool _isLoading = false;
   bool _isAnalyzing = true;
+  int? _severityScore;
 
   @override
   void initState() {
@@ -41,8 +46,15 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     setState(() => _isAnalyzing = true);
     
     final response = await _gemini.analyzeWound(widget.imageFile);
+    int? parsedScore;
+    final match = RegExp(r'(?:Severity Score|Severity):\s*\**\s*(\d+)', caseSensitive: false).firstMatch(response);
+    if (match != null) {
+      parsedScore = int.tryParse(match.group(1)!);
+      if (parsedScore != null && parsedScore > 10) parsedScore = 10;
+    }
     
     setState(() {
+      _severityScore = parsedScore;
       _messages.add(ChatMessage(text: response, isUser: false));
       _isAnalyzing = false;
     });
@@ -81,251 +93,301 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     });
   }
 
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Wound Analysis'),
-        flexibleSpace: Container(
-          decoration: BoxDecoration(gradient: AppColors.primaryGradient),
+        toolbarHeight: 70,
+        backgroundColor: Colors.white.withValues(alpha: 0.8),
+        elevation: 0,
+        flexibleSpace: ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(color: Colors.transparent),
+          ),
         ),
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 8,
+                ),
+              ],
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back_rounded, color: AppColors.primary),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ),
+        ),
+        title: Column(
+          children: [
+            Text(
+              'Wound Analysis',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                'AI-Powered Assessment',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ),
+          ],
+        ),
+        centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.home),
-            onPressed: () => Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(builder: (_) => const HomeScreen()),
-              (_) => false,
+          if (!_isAnalyzing && _messages.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(right: 4.0, top: 8.0, bottom: 8.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 8,
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.ios_share_rounded, color: AppColors.primary),
+                  onPressed: () => PdfService.exportReport(widget.imageFile, _messages.first.text, _severityScore, segmentationMask: widget.segmentationMask),
+                ),
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 8,
+                  ),
+                ],
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.home_rounded, color: AppColors.primary),
+                onPressed: () => Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const HomeScreen()),
+                  (_) => false,
+                ),
+              ),
             ),
           ),
         ],
       ),
       body: Container(
-        decoration: BoxDecoration(gradient: AppColors.backgroundGradient),
+        decoration: BoxDecoration(
+          gradient: AppColors.backgroundGradient,
+        ),
         child: SafeArea(
+          bottom: false,
           child: Column(
             children: [
-              // Compact image preview with info
-              Container(
-                margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    // Small image thumbnail
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.file(
-                        widget.imageFile,
-                        width: 80,
-                        height: 80,
-                        fit: BoxFit.cover,
+              const SizedBox(height: 10), // Small spacer below AppBar
+              // Chat area - Expanded to full screen
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 20,
+                        offset: const Offset(0, -5),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    // Info
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.medical_services, 
-                                color: AppColors.accent, size: 18),
-                              const SizedBox(width: 6),
-                              Text(
-                                'Wound Image',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                    child: Column(
+                      children: [
+                        if (_severityScore != null && !_isAnalyzing)
+                          _buildSeverityDial(),
+                        
+                        // Messages List
+                        Expanded(
+                          child: _isAnalyzing
+                              ? Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Container(
+                                        width: 80,
+                                        height: 80,
+                                        decoration: BoxDecoration(
+                                          color: AppColors.secondary.withValues(alpha: 0.1),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(20),
+                                          child: CircularProgressIndicator(
+                                            valueColor: AlwaysStoppedAnimation(AppColors.secondary),
+                                            strokeWidth: 4,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 24),
+                                      Text(
+                                        'Analyzing Image...',
+                                        style: TextStyle(
+                                          color: AppColors.textPrimary,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'Please wait a moment',
+                                        style: TextStyle(
+                                          color: AppColors.textSecondary,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : ListView.builder(
+                                  controller: _scrollController,
+                                  padding: const EdgeInsets.only(
+                                    left: 20,
+                                    right: 20,
+                                    top: 30,
+                                    bottom: 20,
+                                  ),
+                                  itemCount: _messages.length,
+                                  itemBuilder: (_, i) => TweenAnimationBuilder<double>(
+                                    tween: Tween(begin: 0.0, end: 1.0),
+                                    duration: const Duration(milliseconds: 400),
+                                    curve: Curves.easeOut,
+                                    builder: (context, value, child) {
+                                      return Opacity(
+                                        opacity: value,
+                                        child: Transform.translate(
+                                          offset: Offset(0, 20 * (1 - value)),
+                                          child: child,
+                                        ),
+                                      );
+                                    },
+                                    child: _buildMessage(_messages[i]),
+                                  ),
                                 ),
+                        ),
+
+                        // Input Area
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, -5),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'AI analysis in progress...',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Chat area - Full screen
-              Expanded(
-                child: Column(
-                  children: [
-                    // Messages
-                    Expanded(
-                      child: _isAnalyzing
-                          ? Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    width: 60,
-                                    height: 60,
+                          child: SafeArea(
+                            top: false,
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Container(
                                     decoration: BoxDecoration(
-                                      gradient: AppColors.primaryGradient,
-                                      shape: BoxShape.circle,
+                                      color: const Color(0xFFF3F4F6), // Softer gray
+                                      borderRadius: BorderRadius.circular(24),
                                     ),
-                                    child: const Padding(
-                                      padding: EdgeInsets.all(12),
-                                      child: CircularProgressIndicator(
-                                        valueColor: AlwaysStoppedAnimation(Colors.white),
-                                        strokeWidth: 3,
+                                    child: TextField(
+                                      controller: _controller,
+                                      decoration: InputDecoration(
+                                        hintText: 'Ask a follow-up question...',
+                                        hintStyle: TextStyle(
+                                          color: AppColors.textSecondary.withValues(alpha: 0.7),
+                                          fontSize: 15,
+                                        ),
+                                        border: InputBorder.none,
+                                        contentPadding: const EdgeInsets.symmetric(
+                                          horizontal: 24,
+                                          vertical: 16,
+                                        ),
                                       ),
+                                      textCapitalization: TextCapitalization.sentences,
+                                      onSubmitted: (_) => _sendMessage(),
+                                      enabled: !_isLoading && !_isAnalyzing,
                                     ),
                                   ),
-                                  const SizedBox(height: 20),
-                                  Text(
-                                    'Analyzing wound image...',
-                                    style: TextStyle(
-                                      color: AppColors.textPrimary,
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                                ),
+                                const SizedBox(width: 12),
+                                AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  decoration: BoxDecoration(
+                                    gradient: (_isLoading || _isAnalyzing)
+                                        ? LinearGradient(
+                                            colors: [Colors.grey[300]!, Colors.grey[300]!],
+                                          )
+                                        : AppColors.secondaryGradient,
+                                    shape: BoxShape.circle,
+                                    boxShadow: (_isLoading || _isAnalyzing)
+                                        ? []
+                                        : [
+                                            BoxShadow(
+                                              color: AppColors.secondary.withValues(alpha: 0.4),
+                                              blurRadius: 8,
+                                              offset: const Offset(0, 4),
+                                            ),
+                                          ],
                                   ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    'This may take a few moments',
-                                    style: TextStyle(
-                                      color: AppColors.textSecondary,
-                                      fontSize: 12,
-                                    ),
+                                  child: IconButton(
+                                    icon: _isLoading 
+                                      ? const SizedBox(
+                                          width: 24, 
+                                          height: 24, 
+                                          child: CircularProgressIndicator(
+                                            color: Colors.white, 
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : const Icon(Icons.arrow_upward_rounded, color: Colors.white, size: 24),
+                                    onPressed: (_isLoading || _isAnalyzing) ? null : _sendMessage,
                                   ),
-                                ],
-                              ),
-                            )
-                          : ListView.builder(
-                              controller: _scrollController,
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                              itemCount: _messages.length,
-                              itemBuilder: (_, i) => _buildMessage(_messages[i]),
+                                ),
+                              ],
                             ),
-                    ),
-
-                    // Loading indicator
-                    if (_isLoading)
-                      Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                        child: Row(
-                          children: [
-                            SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation(AppColors.accent),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Text(
-                              'AI is thinking...',
-                              style: TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 12,
-                                fontStyle: FontStyle.italic,
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
-
-                    // Input field
-                    Container(
-                      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, -2),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.grey[100],
-                                borderRadius: BorderRadius.circular(24),
-                                border: Border.all(
-                                  color: Colors.grey[300]!,
-                                  width: 1,
-                                ),
-                              ),
-                              child: TextField(
-                                controller: _controller,
-                                decoration: InputDecoration(
-                                  hintText: 'Ask about wound care...',
-                                  hintStyle: TextStyle(
-                                    color: AppColors.textSecondary,
-                                    fontSize: 14,
-                                  ),
-                                  border: InputBorder.none,
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 18,
-                                    vertical: 12,
-                                  ),
-                                ),
-                                onSubmitted: (_) => _sendMessage(),
-                                enabled: !_isLoading && !_isAnalyzing,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              gradient: (_isLoading || _isAnalyzing)
-                                  ? LinearGradient(
-                                      colors: [Colors.grey[400]!, Colors.grey[400]!],
-                                    )
-                                  : AppColors.primaryGradient,
-                              shape: BoxShape.circle,
-                              boxShadow: (_isLoading || _isAnalyzing)
-                                  ? []
-                                  : [
-                                      BoxShadow(
-                                        color: AppColors.primary.withValues(alpha: 0.3),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                            ),
-                            child: IconButton(
-                              icon: const Icon(Icons.send_rounded, 
-                                color: Colors.white, size: 20),
-                              onPressed: (_isLoading || _isAnalyzing) 
-                                ? null 
-                                : _sendMessage,
-                              padding: EdgeInsets.zero,
-                            ),
-                          ),
-                        ],
-                      ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ],
@@ -336,133 +398,238 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   }
 
   Widget _buildMessage(ChatMessage message) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: Column(
-        crossAxisAlignment: message.isUser 
-          ? CrossAxisAlignment.end 
-          : CrossAxisAlignment.start,
-        children: [
-          // Message label
-          Padding(
-            padding: const EdgeInsets.only(bottom: 6, left: 4, right: 4),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (!message.isUser) ...[
+    final isUser = message.isUser;
+    
+    if (isUser) {
+      // User Message - Right aligned bubble
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 24),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Flexible(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                decoration: BoxDecoration(
+                  gradient: AppColors.secondaryGradient,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(4),
+                    bottomLeft: Radius.circular(20),
+                    bottomRight: Radius.circular(20),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.secondary.withValues(alpha: 0.2),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Text(
+                  message.text,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: AppColors.secondary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.person, size: 18, color: AppColors.secondary),
+            ),
+          ],
+        ),
+      );
+    } else {
+      // AI Message - Left aligned bubble
+      // AI Message - Full width card
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // AI Header
+            Padding(
+              padding: const EdgeInsets.only(left: 4, bottom: 8),
+              child: Row(
+                children: [
                   Container(
-                    width: 20,
-                    height: 20,
+                    width: 24,
+                    height: 24,
+                    padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      gradient: AppColors.accentGradient,
+                      gradient: AppColors.secondaryGradient,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.psychology, 
-                      color: Colors.white, size: 12),
+                    child: Image.asset('assets/images/logo.png', color: Colors.white),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 8),
+                  Text(
+                    'WoundWise AI',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
                 ],
-                Text(
-                  message.isUser ? 'You' : 'AI Assistant',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: message.isUser 
-                      ? AppColors.primary 
-                      : AppColors.accent,
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-          
-          // Message content - full width
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: message.isUser ? AppColors.primaryGradient : null,
-              color: message.isUser ? null : Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: message.isUser 
-                ? null 
-                : Border.all(color: Colors.grey[200]!, width: 1),
-              boxShadow: [
-                BoxShadow(
-                  color: message.isUser
-                      ? AppColors.primary.withValues(alpha: 0.1)
-                      : Colors.black.withValues(alpha: 0.02),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: message.isUser
-                ? Text(
-                    message.text,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      height: 1.6,
-                    ),
-                  )
-                : MarkdownBody(
-                    data: message.text,
-                    styleSheet: MarkdownStyleSheet(
-                      p: TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 14,
-                        height: 1.6,
-                      ),
-                      strong: TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      em: TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 14,
-                        fontStyle: FontStyle.italic,
-                      ),
-                      listBullet: TextStyle(
-                        color: AppColors.accent,
-                        fontSize: 14,
-                      ),
-                      h1: TextStyle(
-                        color: AppColors.primary,
-                        fontSize: 17,
-                        fontWeight: FontWeight.bold,
-                        height: 1.4,
-                      ),
-                      h2: TextStyle(
-                        color: AppColors.primary,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        height: 1.4,
-                      ),
-                      h3: TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        height: 1.4,
-                      ),
-                      code: TextStyle(
-                        color: AppColors.accent,
-                        fontSize: 13,
-                        fontFamily: 'monospace',
-                        backgroundColor: Colors.grey[100],
-                      ),
-                      blockquote: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 13,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
+            // Full width content
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
                   ),
-          ),
-        ],
+                ],
+              ),
+              child: MarkdownBody(
+                data: message.text,
+                styleSheet: MarkdownStyleSheet(
+                  p: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 15,
+                    height: 1.6,
+                    letterSpacing: 0.1,
+                  ),
+                  strong: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  h1: TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  h2: TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    height: 1.5,
+                  ),
+                  listBullet: TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 15,
+                  ),
+                  blockSpacing: 10.0,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  Widget _buildSeverityDial() {
+    Color getSeverityColor(int score) {
+      if (score <= 3) return AppColors.success;
+      if (score <= 6) return Colors.orange;
+      return Colors.red;
+    }
+    
+    final color = getSeverityColor(_severityScore!);
+    
+    return Container(
+      margin: const EdgeInsets.only(top: 24, left: 20, right: 20, bottom: 4),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          )
+        ]
       ),
+      child: Row(
+        children: [
+          SizedBox(
+            height: 70,
+            width: 70,
+            child: Stack(
+              children: [
+                Center(
+                  child: SizedBox(
+                    height: 70,
+                    width: 70,
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween<double>(begin: 0, end: _severityScore! / 10.0),
+                      duration: const Duration(milliseconds: 1500),
+                      curve: Curves.easeOutCubic,
+                      builder: (context, value, _) {
+                        return CircularProgressIndicator(
+                          value: value,
+                          strokeWidth: 8,
+                          backgroundColor: color.withValues(alpha: 0.1),
+                          valueColor: AlwaysStoppedAnimation<Color>(color),
+                        );
+                      }
+                    ),
+                  ),
+                ),
+                Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        '$_severityScore',
+                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color, height: 1.0),
+                      ),
+                      const Text(
+                        '/10',
+                        style: TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold),
+                      )
+                    ],
+                  ),
+                )
+              ],
+            ),
+          ),
+          const SizedBox(width: 20),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Severity Score',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary)
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _severityScore! <= 3 
+                    ? 'Mild condition. Follow basic home care routines.'
+                    : _severityScore! <= 6
+                      ? 'Moderate condition. Consultation recommended.'
+                      : 'Severe condition. Seek medical attention immediately.',
+                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.3),
+                )
+              ]
+            )
+          )
+        ],
+      )
     );
   }
 }

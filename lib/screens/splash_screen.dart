@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../constants/app_constants.dart';
 import '../theme/app_colors.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'home_screen.dart';
+import 'auth_screen.dart';
 
 /// Splash screen displayed on app launch
 class SplashScreen extends StatefulWidget {
@@ -18,18 +20,31 @@ class _SplashScreenState extends State<SplashScreen> {
     _navigateToHome();
   }
 
-  /// Navigate to home screen after delay
+  /// Navigate to home screen or auth screen after delay
   Future<void> _navigateToHome() async {
-    await Future.delayed(
+    const storage = FlutterSecureStorage();
+    final delay = Future.delayed(
       const Duration(seconds: AppConstants.splashScreenDuration),
     );
+    final String? lockedStr = await storage.read(key: 'is_app_locked');
+    final bool isLocked = lockedStr == 'true';
+    
+    await delay;
     
     if (mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => const HomeScreen(),
-        ),
-      );
+      if (isLocked) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => const AuthScreen(),
+          ),
+        );
+      } else {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => const HomeScreen(),
+          ),
+        );
+      }
     }
   }
 

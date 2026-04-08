@@ -1,24 +1,30 @@
 import 'dart:io';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config/api_config.dart';
 
 /// Gemini service with chat session for context retention
 class GeminiService {
-  late final GenerativeModel _model;
+  GenerativeModel? _model;
   ChatSession? _chatSession;
   
-  GeminiService() {
+  GeminiService();
+
+  Future<void> _initModel() async {
+    if (_model != null) return;
+    
+    const storage = FlutterSecureStorage();
+    final apiKey = await storage.read(key: 'gemini_api_key') ?? ApiConfig.geminiApiKey;
+    
     _model = GenerativeModel(
       model: 'gemini-2.5-flash',
-      apiKey: ApiConfig.geminiApiKey,
+      apiKey: apiKey,
       systemInstruction: Content.text(
-        'You are a practical medical AI assistant for wound care. '
-        'Provide actionable advice including first aid and temporary measures. '
-        'Balance safety with practical home care guidance. '
-        'For follow-up questions: give brief, direct answers (2-4 sentences). '
-        'Use simple language and bullet points. '
-        'Include what users can do at home AND when to see a doctor. '
-        'Only answer wound-related questions.',
+        'You are a wound care AI. Be extremely concise. '
+        'Give direct, short answers. No fluff. '
+        'Use bullet points. Max 2-3 sentences per point. '
+        'For follow-ups: Answer in < 50 words if possible. '
+        'Stop if unsafe and advise doctor.',
       ),
     );
   }
@@ -26,23 +32,23 @@ class GeminiService {
   /// Analyze wound image and start chat session
   Future<String> analyzeWound(File imageFile) async {
     try {
+      await _initModel();
       final imageBytes = await imageFile.readAsBytes();
       final prompt = TextPart(
-        'Analyze this wound and provide practical guidance in simple language: '
-        '1. What you see (appearance, size, condition) '
-        '2. Healing stage or concerns '
-        '3. First aid steps you can do at home '
-        '4. Temporary measures for relief '
-        '5. Warning signs that need immediate medical attention '
-        '6. When to see a doctor '
-        'Be helpful and practical while staying safe. '
-        'End with: "⚕️ Consult a healthcare professional for proper diagnosis and treatment."',
+        'Analyze wound. Brief report:\n'
+        '1. Severity Score: [number]/10\n'
+        '2. Appearance (1 sentence)\n'
+        '3. Condition/Stage\n'
+        '4. Immediate Home Care (bullet points)\n'
+        '5. Medical Warning (when to see doctor)\n'
+        'Keep it short and practical. '
+        'End with: "⚕️ Consult doctor for diagnosis."',
       );
       
       final imagePart = DataPart('image/jpeg', imageBytes);
       
       // Start a new chat session with the image
-      _chatSession = _model.startChat(history: [
+      _chatSession = _model!.startChat(history: [
         Content.multi([prompt, imagePart]),
       ]);
       
@@ -60,6 +66,7 @@ class GeminiService {
   /// Send text message in the same session (maintains context)
   Future<String> sendMessage(String message) async {
     try {
+      await _initModel();
       if (_chatSession == null) {
         return 'Please analyze an image first.';
       }
