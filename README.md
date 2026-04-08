@@ -308,6 +308,3 @@ Project Link: [https://github.com/PratikBav/Wound_Wise](https://github.com/Prati
 ## 📞 Support
 
 For support, open an issue in the [GitHub repository](https://github.com/PratikBav/Wound_Wise/issues).
-
----
-
