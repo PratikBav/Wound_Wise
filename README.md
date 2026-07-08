@@ -9,13 +9,13 @@ WoundWise uses advanced PyramidNet deep learning to instantly analyze wounds fro
 ![Gemini](https://img.shields.io/badge/Gemini-2.5%20Flash-4285F4?logo=google)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-## 🎯 Vision
+##  Vision
 
 Making professional wound assessment accessible to everyone - from healthcare providers in hospitals to caregivers at home and patients monitoring their own recovery. WoundWise combines cutting-edge AI technology with medical expertise to deliver instant, accurate wound analysis while maintaining complete privacy through on-device processing.
 
-## ✨ Key Features
+##  Key Features
 
-### 🔬 Advanced AI Analysis
+###  Advanced AI Analysis
 
 - **PyramidNet Deep Learning**: Medical-grade wound classification
 - **Instant Assessment**: Real-time analysis from photos
@@ -23,28 +23,28 @@ Making professional wound assessment accessible to everyone - from healthcare pr
 - **Precise Measurements**: Automated wound size and area calculation
 - **Powered by Gemini 2.5 Flash**: State-of-the-art AI for medical insights
 
-### 🔒 Privacy First
+###  Privacy First
 
 - **On-Device Processing**: All analysis happens locally on your device
 - **No Data Upload**: Your medical images never leave your phone
 - **Complete Privacy**: HIPAA-compliant approach to sensitive medical data
 - **Secure Storage**: Images stored only on your device
 
-### 💬 Intelligent Assistance
+###  Intelligent Assistance
 
 - **Interactive Chat**: Ask follow-up questions with full context retention
 - **First Aid Guidance**: Practical home care steps and temporary measures
 - **Medical Recommendations**: Know when to seek professional help
 - **Personalized Advice**: Tailored guidance based on wound characteristics
 
-### 👥 For Everyone
+###  For Everyone
 
 - **Healthcare Providers**: Quick triage and documentation in clinical settings
 - **Caregivers**: Monitor wound healing progress at home
 - **Patients**: Track recovery and understand wound care needs
 - **Emergency Response**: Rapid assessment in critical situations
 
-### 🎨 User Experience
+###  User Experience
 
 - **Beautiful UI**: Modern, clean interface with intuitive navigation
 - **Gradient Themes**: Professional medical app design
@@ -52,7 +52,7 @@ Making professional wound assessment accessible to everyone - from healthcare pr
 - **Full-Screen Chat**: Immersive conversation experience
 - **Markdown Support**: Formatted, easy-to-read responses
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Prerequisites
 
@@ -92,7 +92,7 @@ Making professional wound assessment accessible to everyone - from healthcare pr
    flutter run
    ```
 
-## 📱 App Flow
+##  App Flow
 
 ```
 Home Screen
@@ -106,7 +106,7 @@ Output Screen (Wound Image)
 AI Analysis Screen (Chatbot)
 ```
 
-## 🏗️ Project Structure
+##  Project Structure
 
 ```
 lib/
@@ -134,7 +134,7 @@ lib/
 └── main.dart                    # App entry point
 ```
 
-## 🎨 Design
+##  Design
 
 WoundWise uses a carefully crafted color palette derived from the app logo:
 
@@ -143,7 +143,7 @@ WoundWise uses a carefully crafted color palette derived from the app logo:
 - **Teal** (#5AB5AE) - Accent color
 - **Light Blue** (#4092C0) - Complementary color
 
-## 🤖 AI Technology
+##  AI Technology
 
 ### PyramidNet Deep Learning Architecture
 
@@ -173,7 +173,7 @@ Complementing the PyramidNet analysis with conversational AI:
 - **Actionable Advice**: Specific steps you can take at home
 - **Risk Assessment**: Identifies warning signs requiring immediate attention
 
-## 📦 Dependencies
+##  Dependencies
 
 ```yaml
 dependencies:
@@ -186,7 +186,7 @@ dependencies:
   flutter_markdown: ^0.7.7 # Markdown rendering
 ```
 
-## 🔐 Permissions
+##  Permissions
 
 ### Android
 
@@ -200,7 +200,7 @@ dependencies:
 
 Permissions are automatically requested when needed.
 
-## 🧪 Testing
+##  Testing
 
 Run tests:
 
@@ -208,12 +208,12 @@ Run tests:
 flutter test
 ```
 
-## 📱 Platform Support
+##  Platform Support
 
-- ✅ Android
-- ✅ iOS
-- ⚠️ Web (Limited - camera access may vary)
-- ⚠️ Desktop (Limited - camera access may vary)
+-  Android
+-  iOS
+-  Web (Limited - camera access may vary)
+-  Desktop (Limited - camera access may vary)
 
 ## 🛠️ Development
 
@@ -237,7 +237,7 @@ flutter build apk --release
 flutter build ios --release
 ```
 
-## 🎯 Use Cases
+##  Use Cases
 
 ### Healthcare Providers
 
@@ -260,7 +260,7 @@ flutter build ios --release
 - **Preparation**: Better communicate with healthcare providers
 - **Empowerment**: Take an active role in your recovery
 
-## ⚠️ Medical Disclaimer
+##  Medical Disclaimer
 
 **WoundWise is a medical assessment tool for educational and informational purposes.**
 
@@ -278,7 +278,7 @@ flutter build ios --release
 - Users are responsible for secure storage of their medical data
 - Complies with medical data privacy standards
 
-## 🤝 Contributing
+##  Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
@@ -288,23 +288,23 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## 📄 License
+##  License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 👨‍💻 Author
+##  Author
 
 Pratik Bav - [@PratikBav](https://github.com/PratikBav)
 
 Project Link: [https://github.com/PratikBav/Wound_Wise](https://github.com/PratikBav/Wound_Wise)
 
-## 🙏 Acknowledgments
+##  Acknowledgments
 
 - Google Gemini AI for powerful language model
 - Flutter team for amazing framework
 - Medical professionals who provided guidance
 - All contributors and testers
 
-## 📞 Support
+##  Support
 
 For support, open an issue in the [GitHub repository](https://github.com/PratikBav/Wound_Wise/issues).
