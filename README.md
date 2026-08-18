@@ -21,7 +21,7 @@ Making professional wound assessment accessible to everyone - from healthcare pr
 - **Instant Assessment**: Real-time analysis from photos
 - **Severity Classification**: Accurate wound severity grading
 - **Precise Measurements**: Automated wound size and area calculation
-- **Powered by Gemini 2.5 Flash**: State-of-the-art AI for medical insights
+- **Powered by Gemini Flash**: State-of-the-art AI for medical insights
 
 ###  Privacy First
 
