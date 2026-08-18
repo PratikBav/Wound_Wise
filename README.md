@@ -169,7 +169,6 @@ Complementing the PyramidNet analysis with conversational AI:
 - **Initial Analysis**: Detailed, comprehensive wound assessment with measurements
 - **Follow-up Questions**: Brief, direct answers (2-4 sentences)
 - **Simple Language**: Medical terminology explained in everyday terms
-- **Actionable Advice**: Specific steps you can take at home
 - **Risk Assessment**: Identifies warning signs requiring immediate attention
 
 ##  Dependencies
