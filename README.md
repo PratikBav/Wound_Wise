@@ -1,4 +1,4 @@
-# WoundWise 🏥
+# WoundWise 
 
 **Professional Wound Assessment at Your Fingertips**
 
@@ -163,7 +163,6 @@ Complementing the PyramidNet analysis with conversational AI:
 - **Medical Knowledge**: Trained on extensive medical literature
 - **Practical Guidance**: First aid steps and temporary measures
 - **Safety First**: Clear warnings and when to seek professional help
-- **Markdown Support**: Formatted responses with bold, italic, lists, and headings
 
 ### Response Intelligence
 
