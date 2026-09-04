@@ -195,7 +195,6 @@ dependencies:
 - Camera
 - Photo Library
 
-Permissions are automatically requested when needed.
 
 ##  Testing
 
