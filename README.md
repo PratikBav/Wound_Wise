@@ -50,7 +50,6 @@ Making professional wound assessment accessible to everyone - from healthcare pr
 - **Gradient Themes**: Professional medical app design
 - **Easy Capture**: Take photos or upload from gallery
 - **Full-Screen Chat**: Immersive conversation experience
-- **Markdown Support**: Formatted, easy-to-read responses
 
 ##  Getting Started
 
